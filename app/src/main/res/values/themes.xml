@@ -1,0 +1,19 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Base.Theme.WPPicker" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- Customize your light theme here. -->
+         <item name="colorPrimary">@color/primary</item>
+         <item name="colorPrimaryDark">@color/primaryDark</item>
+    </style>
+
+    <style name="Theme.WPPicker" parent="Base.Theme.WPPicker" />
+
+    <style name="FullsizeDialog" parent="MaterialAlertDialog.Material3">
+        <item name="android:windowTranslucentStatus">true</item>
+    </style>
+
+    <style name="DialogAnimation">
+        <item name="android:windowEnterAnimation">@android:anim/fade_in</item>
+        <item name="android:windowExitAnimation">@android:anim/fade_out</item>
+    </style>
+</resources>

@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingVertical="16dp"
+    android:paddingEnd="16dp"
+    >
+
+    <ImageButton
+        android:id="@+id/btn_search_back"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:background="@null"
+        android:src="@drawable/ic_back"
+        app:tint="#666"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/cl_search"
+        android:layout_width="0dp"
+        android:layout_height="48dp"
+        android:background="@drawable/bg_searchbox"
+        app:layout_constraintStart_toEndOf="@id/btn_search_back"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" >
+
+        <EditText
+            android:id="@+id/et_search"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_marginStart="16dp"
+            android:gravity="center_vertical"
+            android:background="@null"
+            android:maxLines="1"
+            android:textColor="#000"
+            android:textSize="14dp"
+            android:hint="I'm search for..."
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/btn_search"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
+
+        <ImageButton
+            android:id="@+id/btn_search"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@null"
+            android:src="@drawable/ic_search"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <TextView
+        android:id="@+id/tv_search_orientation_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textSize="14dp"
+        android:textColor="@color/hint"
+        android:text="Orientation : "
+        app:layout_constraintEnd_toStartOf="@id/tv_search_orientation"
+        app:layout_constraintTop_toBottomOf="@id/btn_search_back"/>
+    <TextView
+        android:id="@+id/tv_search_orientation"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="14dp"
+        android:textColor="@color/primary"
+        android:text="All"
+        app:layout_constraintEnd_toStartOf="@id/iv_search_orientation_icon"
+        app:layout_constraintTop_toTopOf="@id/tv_search_orientation_title"
+        />
+
+    <ImageView
+        android:id="@+id/iv_search_orientation_icon"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:src="@drawable/ic_arrow_down"
+        app:tint="@color/primary"
+        android:padding="4dp"
+        app:layout_constraintEnd_toEndOf="@id/cl_search"
+        app:layout_constraintTop_toTopOf="@id/tv_search_orientation"
+        app:layout_constraintBottom_toBottomOf="@id/tv_search_orientation"
+        app:layout_constraintDimensionRatio="1:1"
+        />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rcv_search_list"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginStart="16dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_search_orientation_title"
+        app:layout_constraintBottom_toBottomOf="parent"/>
+
+    <include
+        layout="@layout/empty"
+        android:id="@+id/empty"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone"
+        app:layout_constraintStart_toStartOf="@id/rcv_search_list"
+        app:layout_constraintEnd_toEndOf="@id/rcv_search_list"
+        app:layout_constraintTop_toTopOf="@id/rcv_search_list"
+        app:layout_constraintBottom_toBottomOf="@id/rcv_search_list"
+        />
+
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>
