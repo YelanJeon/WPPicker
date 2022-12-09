@@ -107,8 +107,7 @@ class SearchActivity: AppCompatActivity() {
                 Log.i("TEST", "response > " + response.code())
                 if(response.code() == 200) {
                     val list = response.body()!!.resultList
-                    (binding.rcvSearchList.adapter as PhotoListAdapter).dataList = list
-                    (binding.rcvSearchList.adapter as PhotoListAdapter).notifyDataSetChanged()
+                    (binding.rcvSearchList.adapter as PhotoListAdapter).submitList(list)
                 }
                 checkEmpty()
             }

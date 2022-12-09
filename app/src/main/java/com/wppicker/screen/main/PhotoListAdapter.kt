@@ -8,6 +8,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomTarget
@@ -20,8 +22,18 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-class PhotoListAdapter(): RecyclerView.Adapter<PhotoListHolder>() {
-    var dataList: List<PhotoData> = listOf()
+class PhotoListAdapter(): ListAdapter<PhotoData, PhotoListHolder>(diffCallback) {
+    companion object {
+        val diffCallback = object : DiffUtil.ItemCallback<PhotoData>() {
+            override fun areItemsTheSame(oldItem: PhotoData, newItem: PhotoData): Boolean {
+                return oldItem.photoIdx == newItem.photoIdx
+            }
+
+            override fun areContentsTheSame(oldItem: PhotoData, newItem: PhotoData): Boolean {
+                return oldItem.photoIdx == newItem.photoIdx
+            }
+        }
+    }
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PhotoListHolder {
         val rootView = LayoutInflater.from(parent.context).inflate(R.layout.item_main_list, parent, false)
         val layoutParams = RecyclerView.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
@@ -30,18 +42,14 @@ class PhotoListAdapter(): RecyclerView.Adapter<PhotoListHolder>() {
         val holder = PhotoListHolder(rootView)
         holder.itemView.setOnClickListener {
             Log.i("TEST", "position adapter ${holder.adapterPosition} / ${holder.layoutPosition} / ${holder.oldPosition}")
-            val dialog = DetailDialog.getInstance(dataList[holder.adapterPosition].photoIdx)
+            val dialog = DetailDialog.getInstance(getItem(holder.adapterPosition).photoIdx)
             dialog.show((parent.context as AppCompatActivity).supportFragmentManager, "detail")
         }
         return holder
     }
 
     override fun onBindViewHolder(holder: PhotoListHolder, position: Int) {
-        holder.bind(dataList[position])
-    }
-
-    override fun getItemCount(): Int {
-        return dataList.size
+        holder.bind(getItem(position))
     }
 
 }

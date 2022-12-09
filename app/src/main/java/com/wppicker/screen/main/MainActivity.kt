@@ -5,14 +5,13 @@ import android.graphics.Rect
 import android.os.Bundle
 import android.text.SpannableStringBuilder
 import android.text.style.ForegroundColorSpan
-import android.util.Log
 import android.view.View
-import android.widget.AbsListView
 import android.widget.Toast
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.GravityCompat
-import androidx.core.view.isEmpty
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
@@ -22,8 +21,6 @@ import com.wppicker.data.TopicData
 import com.wppicker.databinding.ActivityMainBinding
 import com.wppicker.common.Utils
 import com.wppicker.data.PhotoData
-import com.wppicker.data.TopicPhotoURLS
-import com.wppicker.data.TopicPhotoURL
 import com.wppicker.request.ReqImage
 import com.wppicker.screen.detail.DetailDialog
 import com.wppicker.screen.search.SearchActivity
@@ -34,6 +31,9 @@ import retrofit2.Response
 class MainActivity: AppCompatActivity() {
 
     val binding by lazy { ActivityMainBinding.inflate(layoutInflater)}
+    val viewModel by lazy {
+        ViewModelProvider(this, MainViewModel.Factory(MainRepository(MyRetrofit.retrofit)))[MainViewModel::class.java]
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,29 +43,32 @@ class MainActivity: AppCompatActivity() {
         setTopicView()
         setListView()
         setEmptyView()
+        setOnClickListeners()
 
-        loadTopics()
+        viewModel.loadTopics()
 
-        binding.btnMainMenu.setOnClickListener {
-            binding.root.openDrawer(GravityCompat.START)
+        viewModel.topics.observe(this) {
+            topicList ->
+                (binding.rcvMainTopic.adapter as TopicAdapter).submitList(topicList)
+                viewModel.loadPhotos((binding.rcvMainTopic.adapter as TopicAdapter).getSelectedItem().idx)
         }
 
-        binding.btnMainSearch.setOnClickListener {
-            val keyword = binding.etMainSearch.text.toString()
-
-            if(keyword.isEmpty()) {
-                Toast.makeText(baseContext, "keyword is empty", Toast.LENGTH_SHORT).show()
-            }else{
-                val intent = Intent(MainActivity@this, SearchActivity::class.java)
-                intent.putExtra("keyword", keyword)
-                startActivity(intent)
-                binding.etMainSearch.text = null
-            }
+        viewModel.photos.observe(this) {
+            photoList ->
+                (binding.rcvMainList.adapter as PhotoListAdapter).submitList(photoList)
+                checkEmpty()
         }
 
-        binding.btnMainLucky.setOnClickListener {
-            showRandomPhotoDialog()
+        viewModel.randomPhotoIdx.observe(this) {
+            photoIdx ->
+                if(photoIdx.isNullOrEmpty()) {
+                    Toast.makeText(baseContext, "Failed to load photo :(", Toast.LENGTH_SHORT).show()
+                }else {
+                    DetailDialog.getInstance(photoIdx).show(supportFragmentManager, "random")
+                }
+
         }
+
     }
 
     private fun setDrawer() {
@@ -84,7 +87,7 @@ class MainActivity: AppCompatActivity() {
             topicClickListener = object : OnTopicClickListener {
                 override fun onTopicClicked(topicData: TopicData) {
                     binding.rcvMainTopic.scrollToPosition((binding.rcvMainTopic.adapter as TopicAdapter).selectedPosition)
-                    loadPhotos(topicData.idx)
+                    viewModel.loadPhotos(topicData.idx)
                 }
             }
         }
@@ -104,32 +107,6 @@ class MainActivity: AppCompatActivity() {
             }
         })
 
-    }
-
-    private fun loadTopics() {
-        var defaultList = listOf(TopicData(TopicData.TOPIC_IDX_ALL, "All Topics", TopicPhotoURLS(TopicPhotoURL(""))))
-
-        MyRetrofit.retrofit.create(ReqImage::class.java).getTopicList().enqueue(object:Callback<List<TopicData>> {
-            override fun onResponse(call: Call<List<TopicData>>, response: Response<List<TopicData>>) {
-                var list = defaultList
-                if(response.code() == 200) {
-                    list = list + response.body()!!
-                }
-                setAdapter(list)
-                loadPhotos(TopicData.TOPIC_IDX_ALL)
-            }
-
-            override fun onFailure(call: Call<List<TopicData>>, t: Throwable) {
-                setAdapter(defaultList)
-                loadPhotos(TopicData.TOPIC_IDX_ALL)
-            }
-
-            private fun setAdapter(list: List<TopicData>) {
-                (binding.rcvMainTopic.adapter as TopicAdapter).dataList = list
-                (binding.rcvMainTopic.adapter as TopicAdapter).notifyDataSetChanged()
-            }
-
-        })
     }
 
     private fun setListView() {
@@ -157,58 +134,43 @@ class MainActivity: AppCompatActivity() {
         })
     }
 
-    private fun loadPhotos(topicIdx: String) {
-        val callback = object : Callback<List<PhotoData>> {
-            override fun onResponse(call: Call<List<PhotoData>>, response: Response<List<PhotoData>>) {
-                if(response.code() == 200) {
-                    val list = response.body()!!
-                    (binding.rcvMainList.adapter as PhotoListAdapter).dataList = list
-                    (binding.rcvMainList.adapter as PhotoListAdapter).notifyDataSetChanged()
-                }
-                checkEmpty()
-            }
-
-            override fun onFailure(call: Call<List<PhotoData>>, t: Throwable) {
-                checkEmpty()
-            }
-
-            fun checkEmpty() {
-                if(binding.rcvMainList.adapter!!.itemCount == 0) {
-                    binding.empty.root.visibility = View.VISIBLE
-                    binding.btnMainLucky.visibility = View.GONE
-                }else{
-                    binding.empty.root.visibility = View.GONE
-                    binding.btnMainLucky.visibility = View.VISIBLE
-                }
-            }
-        }
-
-        if(topicIdx == TopicData.TOPIC_IDX_ALL) {
-            MyRetrofit.retrofit.create(ReqImage::class.java).getAllImageList().enqueue(callback)
-        }else{
-            MyRetrofit.retrofit.create(ReqImage::class.java).getImageList(topicIdx).enqueue(callback)
-        }
-    }
-
     private fun setEmptyView() {
         binding.empty.tvEmptyMessage.text = "Failed to load Photos!"
-        binding.empty.btnEmptyAction.setOnClickListener { loadPhotos((binding.rcvMainTopic.adapter as TopicAdapter).getSelectedItem().idx) }
+        binding.empty.btnEmptyAction.setOnClickListener {
+            viewModel.loadPhotos((binding.rcvMainTopic.adapter as TopicAdapter).getSelectedItem().idx)
+        }
     }
 
-    private fun showRandomPhotoDialog() {
-        MyRetrofit.retrofit.create(ReqImage::class.java).getRandomPhoto().enqueue(object : Callback<PhotoData> {
-            override fun onResponse(call: Call<PhotoData>, response: Response<PhotoData>) {
-                if(response.code() == 200) {
-                    DetailDialog.getInstance(response.body()!!.photoIdx).show(supportFragmentManager, "random")
-                }else{
-                    Toast.makeText(baseContext, "Failed to load Image", Toast.LENGTH_SHORT).show()
-                }
-            }
+    private fun setOnClickListeners() {
+        binding.btnMainMenu.setOnClickListener {
+            binding.root.openDrawer(GravityCompat.START)
+        }
 
-            override fun onFailure(call: Call<PhotoData>, t: Throwable) {
-                Toast.makeText(baseContext, "Failed to load Image", Toast.LENGTH_SHORT).show()
-            }
-        })
+        binding.btnMainSearch.setOnClickListener {
+            val keyword = binding.etMainSearch.text.toString()
 
+            if(keyword.isEmpty()) {
+                Toast.makeText(baseContext, "keyword is empty", Toast.LENGTH_SHORT).show()
+            }else{
+                val intent = Intent(MainActivity@this, SearchActivity::class.java)
+                intent.putExtra("keyword", keyword)
+                startActivity(intent)
+                binding.etMainSearch.text = null
+            }
+        }
+
+        binding.btnMainLucky.setOnClickListener {
+            viewModel.getRandomPhoto((binding.rcvMainTopic.adapter as TopicAdapter).getSelectedItem().idx);
+        }
+    }
+
+    private fun checkEmpty() {
+        if(binding.rcvMainList.adapter!!.itemCount == 0) {
+            binding.empty.root.visibility = View.VISIBLE
+            binding.btnMainLucky.visibility = View.GONE
+        }else{
+            binding.empty.root.visibility = View.GONE
+            binding.btnMainLucky.visibility = View.VISIBLE
+        }
     }
 }
