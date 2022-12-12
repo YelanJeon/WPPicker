@@ -2,7 +2,6 @@ package com.wppicker.screen.main
 
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -41,7 +40,6 @@ class PhotoListAdapter(): ListAdapter<PhotoData, PhotoListHolder>(diffCallback) 
 
         val holder = PhotoListHolder(rootView)
         holder.itemView.setOnClickListener {
-            Log.i("TEST", "position adapter ${holder.adapterPosition} / ${holder.layoutPosition} / ${holder.oldPosition}")
             val dialog = DetailDialog.getInstance(getItem(holder.adapterPosition).photoIdx)
             dialog.show((parent.context as AppCompatActivity).supportFragmentManager, "detail")
         }

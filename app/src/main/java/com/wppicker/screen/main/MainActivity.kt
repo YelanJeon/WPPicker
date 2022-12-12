@@ -7,7 +7,6 @@ import android.text.SpannableStringBuilder
 import android.text.style.ForegroundColorSpan
 import android.view.View
 import android.widget.Toast
-import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.GravityCompat
@@ -20,13 +19,8 @@ import com.wppicker.common.MyRetrofit
 import com.wppicker.data.TopicData
 import com.wppicker.databinding.ActivityMainBinding
 import com.wppicker.common.Utils
-import com.wppicker.data.PhotoData
-import com.wppicker.request.ReqImage
 import com.wppicker.screen.detail.DetailDialog
 import com.wppicker.screen.search.SearchActivity
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
 
 class MainActivity: AppCompatActivity() {
 
@@ -59,16 +53,9 @@ class MainActivity: AppCompatActivity() {
                 checkEmpty()
         }
 
-        viewModel.randomPhotoIdx.observe(this) {
-            photoIdx ->
-                if(photoIdx.isNullOrEmpty()) {
-                    Toast.makeText(baseContext, "Failed to load photo :(", Toast.LENGTH_SHORT).show()
-                }else {
-                    DetailDialog.getInstance(photoIdx).show(supportFragmentManager, "random")
-                }
-
+        viewModel.intent.observe(this) {
+            intent -> startActivity(intent)
         }
-
     }
 
     private fun setDrawer() {
@@ -148,19 +135,25 @@ class MainActivity: AppCompatActivity() {
 
         binding.btnMainSearch.setOnClickListener {
             val keyword = binding.etMainSearch.text.toString()
-
-            if(keyword.isEmpty()) {
-                Toast.makeText(baseContext, "keyword is empty", Toast.LENGTH_SHORT).show()
+            if(keyword.isNullOrEmpty()) {
+                Toast.makeText(MainActivity@this, "Keyword is empty :(", Toast.LENGTH_SHORT).show()
             }else{
                 val intent = Intent(MainActivity@this, SearchActivity::class.java)
                 intent.putExtra("keyword", keyword)
-                startActivity(intent)
-                binding.etMainSearch.text = null
+                viewModel.setSearchIntent(intent)
             }
+
         }
 
         binding.btnMainLucky.setOnClickListener {
-            viewModel.getRandomPhoto((binding.rcvMainTopic.adapter as TopicAdapter).getSelectedItem().idx);
+            viewModel.getRandomPhoto((binding.rcvMainTopic.adapter as TopicAdapter).getSelectedItem().idx) {
+                photoIdx ->
+                    if(photoIdx.isNullOrEmpty()) {
+                        Toast.makeText(baseContext, "Failed to load photo :(", Toast.LENGTH_SHORT).show()
+                    }else {
+                        DetailDialog.getInstance(photoIdx).show(supportFragmentManager, "random")
+                    }
+            }
         }
     }
 

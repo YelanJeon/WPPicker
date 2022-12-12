@@ -1,19 +1,15 @@
 package com.wppicker.screen.main
 
-import android.view.View
-import android.widget.Toast
 import com.wppicker.common.MyRetrofit
 import com.wppicker.data.*
 import com.wppicker.request.ReqImage
-import com.wppicker.screen.detail.DetailDialog
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import retrofit2.Retrofit
-import java.util.*
 
 class MainRepository(private val retrofit: Retrofit) {
-    fun loadTopics(onTopicLoaded: OnTopicLoaded) {
+    fun loadTopics(onTopicLoaded: OnTopicListLoaded) {
         var defaultList = listOf(
             TopicData(
                 TopicData.TOPIC_IDX_ALL, "All Topics", TopicPhotoURLS(
@@ -37,7 +33,7 @@ class MainRepository(private val retrofit: Retrofit) {
         })
     }
 
-    fun loadPhotos(topicIdx: String, onPhotoLoaded: OnPhotoLoaded) {
+    fun loadPhotos(topicIdx: String, onPhotoLoaded: OnPhotoListLoaded) {
         val callback = object : Callback<List<PhotoData>> {
             override fun onResponse(call: Call<List<PhotoData>>, response: Response<List<PhotoData>>) {
                 val list = mutableListOf<PhotoData>()
@@ -59,7 +55,7 @@ class MainRepository(private val retrofit: Retrofit) {
         }
     }
 
-    fun loadRandomPhoto(topicIdx: String, onPhotoLoaded: OnPhotoLoaded) {
+    fun loadRandomPhoto(topicIdx: String, onPhotoLoaded: OnPhotoListLoaded) {
         MyRetrofit.retrofit.create(ReqImage::class.java).getRandomPhoto().enqueue(object : Callback<PhotoData> {
             override fun onResponse(call: Call<PhotoData>, response: Response<PhotoData>) {
                 if(response.body() == null) {
@@ -81,10 +77,10 @@ class MainRepository(private val retrofit: Retrofit) {
 
 }
 
-interface OnTopicLoaded {
+interface OnTopicListLoaded {
     fun onTopicLoaded(topicList: List<TopicData>)
 }
 
-interface OnPhotoLoaded {
+interface OnPhotoListLoaded {
     fun onPhotoLoaded(photoList: List<PhotoData>)
 }

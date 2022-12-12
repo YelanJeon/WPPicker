@@ -7,6 +7,7 @@ import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -16,12 +17,17 @@ import com.wppicker.data.PhotoData
 import com.wppicker.data.SearchPhotoResultData
 import com.wppicker.databinding.ActivitySearchBinding
 import com.wppicker.request.ReqImage
+import com.wppicker.screen.main.MainRepository
 import com.wppicker.screen.main.PhotoListAdapter
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
 class SearchActivity: AppCompatActivity() {
+
+    val viewModel by lazy {
+        ViewModelProvider(this, SearchViewModel.Factory(SearchRepository(MyRetrofit.retrofit)))[SearchViewModel::class.java]
+    }
 
     val binding by lazy { ActivitySearchBinding.inflate(layoutInflater)}
 
@@ -31,46 +37,19 @@ class SearchActivity: AppCompatActivity() {
 
         setListView()
         setEmptyView()
+        setOnClickListener()
 
         val basicKeyword = intent.getStringExtra("keyword")
         basicKeyword?.let {
             binding.etSearch.setText(it)
-            loadPhotos(it, null)
+            viewModel.loadPhotos(it, null)
         }
 
-        binding.btnSearchBack.setOnClickListener {
-            finish()
+        viewModel.photos.observe(this) {
+            photos ->
+                (binding.rcvSearchList.adapter as PhotoListAdapter).submitList(photos)
+                checkEmpty()
         }
-
-        binding.btnSearch.setOnClickListener {
-            val keyword = binding.etSearch.text.toString()
-
-            if(keyword.isEmpty()) {
-                Toast.makeText(baseContext, "keyword is empty", Toast.LENGTH_SHORT).show()
-            }else {
-                loadPhotos(
-                    binding.etSearch.text.toString(),
-                    binding.tvSearchOrientation.text.toString()
-                )
-            }
-        }
-
-        val onOrientationClickListener = View.OnClickListener() {
-            val builder = MaterialAlertDialogBuilder(SearchActivity@this)
-            builder.setTitle("Choose orientation")
-            val menus = arrayOf("All", "Portrait", "Landscape", "Squarish")
-            builder.setItems(menus, object: DialogInterface.OnClickListener {
-                override fun onClick(dialog: DialogInterface?, which: Int) {
-                    binding.tvSearchOrientation.text = menus[which]
-                    loadPhotos(binding.etSearch.text.toString(), menus[which])
-                }
-            })
-            builder.create().show()
-        }
-
-        binding.tvSearchOrientation.setOnClickListener(onOrientationClickListener)
-        binding.ivSearchOrientationIcon.setOnClickListener(onOrientationClickListener)
-
     }
 
     private fun setListView() {
@@ -99,39 +78,52 @@ class SearchActivity: AppCompatActivity() {
         })
     }
 
-    private fun loadPhotos(keyword: String, orientation: String?) {
-        val mOrientation = if(orientation == "All") null else orientation?.lowercase()
 
-        val callback = object : Callback<SearchPhotoResultData> {
-            override fun onResponse(call: Call<SearchPhotoResultData>, response: Response<SearchPhotoResultData>) {
-                Log.i("TEST", "response > " + response.code())
-                if(response.code() == 200) {
-                    val list = response.body()!!.resultList
-                    (binding.rcvSearchList.adapter as PhotoListAdapter).submitList(list)
-                }
-                checkEmpty()
-            }
+    private fun setOnClickListener() {
+        binding.btnSearchBack.setOnClickListener {
+            finish()
+        }
 
-            override fun onFailure(call: Call<SearchPhotoResultData>, t: Throwable) {
-                checkEmpty()
-                t.printStackTrace()
-            }
+        binding.btnSearch.setOnClickListener {
+            val keyword = binding.etSearch.text.toString()
 
-            fun checkEmpty() {
-                if(binding.rcvSearchList.adapter!!.itemCount == 0) {
-                    binding.empty.root.visibility = View.VISIBLE
-                }else{
-                    binding.empty.root.visibility = View.GONE
-                }
+            if(keyword.isEmpty()) {
+                Toast.makeText(baseContext, "keyword is empty", Toast.LENGTH_SHORT).show()
+            }else {
+                viewModel.loadPhotos(
+                    binding.etSearch.text.toString(),
+                    binding.tvSearchOrientation.text.toString()
+                )
             }
         }
 
-        MyRetrofit.retrofit.create(ReqImage::class.java).getSearchPhotoList(keyword, mOrientation).enqueue(callback)
+        val onOrientationClickListener = View.OnClickListener() {
+            val builder = MaterialAlertDialogBuilder(SearchActivity@this)
+            builder.setTitle("Choose orientation")
+            val menus = arrayOf("All", "Portrait", "Landscape", "Squarish")
+            builder.setItems(menus, object: DialogInterface.OnClickListener {
+                override fun onClick(dialog: DialogInterface?, which: Int) {
+                    binding.tvSearchOrientation.text = menus[which]
+                    viewModel.loadPhotos(binding.etSearch.text.toString(), menus[which])
+                }
+            })
+            builder.create().show()
+        }
 
+        binding.tvSearchOrientation.setOnClickListener(onOrientationClickListener)
+        binding.ivSearchOrientationIcon.setOnClickListener(onOrientationClickListener)
     }
 
     private fun setEmptyView() {
         binding.empty.tvEmptyMessage.text = "Failed to load Photos!"
-        binding.empty.btnEmptyAction.setOnClickListener { loadPhotos(binding.etSearch.text.toString(), binding.tvSearchOrientation.text.toString()) }
+        binding.empty.btnEmptyAction.setOnClickListener { viewModel.loadPhotos(binding.etSearch.text.toString(), binding.tvSearchOrientation.text.toString()) }
+    }
+
+    fun checkEmpty() {
+        if(binding.rcvSearchList.adapter!!.itemCount == 0) {
+            binding.empty.root.visibility = View.VISIBLE
+        }else{
+            binding.empty.root.visibility = View.GONE
+        }
     }
 }
