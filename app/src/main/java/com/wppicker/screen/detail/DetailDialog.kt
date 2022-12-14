@@ -8,24 +8,26 @@ import android.os.Bundle
 import android.util.Log
 import android.view.*
 import android.widget.Toast
+import androidx.activity.viewModels
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.ViewModelProvider
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
 import com.wppicker.R
-import com.wppicker.common.MyRetrofit
 import com.wppicker.databinding.DlgDetailBinding
 import com.wppicker.common.MyWallpaperManager
+import com.wppicker.common.RetrofitModule
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-
+@AndroidEntryPoint
 class DetailDialog() : DialogFragment() {
 
     private val viewModel by lazy {
-        ViewModelProvider(this, DetailViewModel.Factory(DetailRepository(MyRetrofit.retrofit)))[DetailViewModel::class.java]
+        ViewModelProvider(this, DetailViewModel.Factory(DetailRepository(RetrofitModule().createRetrofit())))[DetailViewModel::class.java]
     }
 
     private var binding : DlgDetailBinding? = null

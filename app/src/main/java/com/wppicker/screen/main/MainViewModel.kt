@@ -4,9 +4,12 @@ import android.content.Intent
 import androidx.lifecycle.*
 import com.wppicker.data.PhotoData
 import com.wppicker.data.TopicData
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 
-class MainViewModel(
-    private val repository: MainRepository
+@HiltViewModel
+class MainViewModel @Inject constructor(
+    var repository: MainRepository
 ): ViewModel() {
 
     private val _topics = MutableLiveData<List<TopicData>>()
@@ -46,7 +49,7 @@ class MainViewModel(
         _intent.value = mIntent
     }
 
-    class Factory(private val repository: MainRepository) : ViewModelProvider.Factory {
+    class Factory @Inject constructor(private val repository: MainRepository) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             return MainViewModel(repository) as T
         }

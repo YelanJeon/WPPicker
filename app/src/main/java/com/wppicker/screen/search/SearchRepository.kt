@@ -7,8 +7,9 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import retrofit2.Retrofit
+import javax.inject.Inject
 
-class SearchRepository(private val retrofit: Retrofit) {
+class SearchRepository @Inject constructor (var retrofit: Retrofit) {
     fun searchPhoto(keyword: String, mOrientation: String?, onSearchPhoto: OnSearchPhoto) {
         retrofit.create(ReqImage::class.java).getSearchPhotoList(keyword, mOrientation).enqueue(object : Callback<SearchPhotoResultData> {
             override fun onResponse(call: Call<SearchPhotoResultData>, response: Response<SearchPhotoResultData>) {

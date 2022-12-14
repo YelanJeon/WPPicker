@@ -5,9 +5,12 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.wppicker.data.PhotoData
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 
-class SearchViewModel(
-    private val repository: SearchRepository
+@HiltViewModel
+class SearchViewModel @Inject constructor(
+    var repository: SearchRepository
 ) : ViewModel() {
 
     private val _photos = MutableLiveData<List<PhotoData>>()
@@ -23,7 +26,7 @@ class SearchViewModel(
         })
 
     }
-    class Factory(private val repository: SearchRepository) : ViewModelProvider.Factory {
+    class Factory @Inject constructor(private val repository: SearchRepository) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             return SearchViewModel(repository) as T
         }

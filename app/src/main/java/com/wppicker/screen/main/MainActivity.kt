@@ -7,27 +7,26 @@ import android.text.SpannableStringBuilder
 import android.text.style.ForegroundColorSpan
 import android.view.View
 import android.widget.Toast
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.GravityCompat
-import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.wppicker.R
-import com.wppicker.common.MyRetrofit
 import com.wppicker.data.TopicData
 import com.wppicker.databinding.ActivityMainBinding
 import com.wppicker.common.Utils
 import com.wppicker.screen.detail.DetailDialog
 import com.wppicker.screen.search.SearchActivity
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity: AppCompatActivity() {
 
     val binding by lazy { ActivityMainBinding.inflate(layoutInflater)}
-    val viewModel by lazy {
-        ViewModelProvider(this, MainViewModel.Factory(MainRepository(MyRetrofit.retrofit)))[MainViewModel::class.java]
-    }
+    val viewModel: MainViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

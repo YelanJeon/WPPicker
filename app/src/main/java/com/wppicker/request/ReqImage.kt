@@ -23,8 +23,10 @@ interface ReqImage {
     fun getImageDetail(
         @Path("photoID") photoIdx: String) : Call<PhotoData>
 
-    @GET("/photos/random")
-    fun getRandomPhoto() : Call<PhotoData>
+    @GET("/photos/random/")
+    fun getRandomPhoto(
+        @Query("topics") topicIdx: String
+    ) : Call<PhotoData>
 
     @GET("/search/photos")
     fun getSearchPhotoList(

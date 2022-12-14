@@ -3,31 +3,22 @@ package com.wppicker.screen.search
 import android.content.DialogInterface
 import android.graphics.Rect
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import android.widget.Toast
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.wppicker.common.MyRetrofit
 import com.wppicker.common.Utils
-import com.wppicker.data.PhotoData
-import com.wppicker.data.SearchPhotoResultData
 import com.wppicker.databinding.ActivitySearchBinding
-import com.wppicker.request.ReqImage
-import com.wppicker.screen.main.MainRepository
 import com.wppicker.screen.main.PhotoListAdapter
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class SearchActivity: AppCompatActivity() {
 
-    val viewModel by lazy {
-        ViewModelProvider(this, SearchViewModel.Factory(SearchRepository(MyRetrofit.retrofit)))[SearchViewModel::class.java]
-    }
+    val viewModel: SearchViewModel by viewModels()
 
     val binding by lazy { ActivitySearchBinding.inflate(layoutInflater)}
 

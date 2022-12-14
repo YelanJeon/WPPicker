@@ -1,14 +1,14 @@
 package com.wppicker.screen.main
 
-import com.wppicker.common.MyRetrofit
 import com.wppicker.data.*
 import com.wppicker.request.ReqImage
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import retrofit2.Retrofit
+import javax.inject.Inject
 
-class MainRepository(private val retrofit: Retrofit) {
+class MainRepository @Inject constructor (var retrofit: Retrofit) {
     fun loadTopics(onTopicLoaded: OnTopicListLoaded) {
         var defaultList = listOf(
             TopicData(
@@ -56,7 +56,7 @@ class MainRepository(private val retrofit: Retrofit) {
     }
 
     fun loadRandomPhoto(topicIdx: String, onPhotoLoaded: OnPhotoListLoaded) {
-        MyRetrofit.retrofit.create(ReqImage::class.java).getRandomPhoto().enqueue(object : Callback<PhotoData> {
+        retrofit.create(ReqImage::class.java).getRandomPhoto(topicIdx).enqueue(object : Callback<PhotoData> {
             override fun onResponse(call: Call<PhotoData>, response: Response<PhotoData>) {
                 if(response.body() == null) {
                     onPhotoLoaded.onPhotoLoaded(listOf(getDummyData()))

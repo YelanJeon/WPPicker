@@ -7,8 +7,13 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.wppicker.data.PhotoData
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 
-class DetailViewModel(private val repository: DetailRepository) : ViewModel() {
+@HiltViewModel
+class DetailViewModel @Inject constructor(
+    var repository: DetailRepository
+    ) : ViewModel() {
     private val _intent = MutableLiveData<Intent>()
     val intent = _intent as LiveData<Intent>
 
@@ -29,7 +34,7 @@ class DetailViewModel(private val repository: DetailRepository) : ViewModel() {
         _intent.value = mIntent
     }
 
-    class Factory(private val repository: DetailRepository) : ViewModelProvider.Factory {
+    class Factory @Inject constructor(private val repository: DetailRepository) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             return DetailViewModel(repository) as T
         }
