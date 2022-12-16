@@ -9,14 +9,22 @@ import retrofit2.http.*
 interface ReqImage {
 
     @GET("/topics")
-    fun getTopicList() : Call<List<TopicData>>
+    fun getTopicList(
+        @Query("page") page: Int = 1,
+        @Query("per_page") count: Int = 10
+    ) : Call<List<TopicData>>
 
     @GET("/photos")
-    fun getAllImageList() : Call<List<PhotoData>>
+    fun getAllImageList(
+        @Query("page") page: Int = 1,
+        @Query("per_page") count: Int = 10
+    ) : Call<List<PhotoData>>
 
     @GET("/topics/{topicID}/photos")
     fun getImageList(
         @Path("topicID") topicIdx: String,
+        @Query("page") page: Int = 1,
+        @Query("per_page") count: Int = 10
     ) : Call<List<PhotoData>>
 
     @GET("/photos/{photoID}")

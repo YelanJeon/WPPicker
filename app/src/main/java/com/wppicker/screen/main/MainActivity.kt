@@ -5,12 +5,16 @@ import android.graphics.Rect
 import android.os.Bundle
 import android.text.SpannableStringBuilder
 import android.text.style.ForegroundColorSpan
+import android.util.Log
 import android.view.View
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.GravityCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
@@ -18,15 +22,26 @@ import com.wppicker.R
 import com.wppicker.data.TopicData
 import com.wppicker.databinding.ActivityMainBinding
 import com.wppicker.common.Utils
+import com.wppicker.data.PhotoData
 import com.wppicker.screen.detail.DetailDialog
 import com.wppicker.screen.search.SearchActivity
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.shareIn
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class MainActivity: AppCompatActivity() {
 
-    val binding by lazy { ActivityMainBinding.inflate(layoutInflater)}
-    val viewModel: MainViewModel by viewModels()
+    private val binding by lazy { ActivityMainBinding.inflate(layoutInflater)}
+    private val viewModel: MainViewModel by viewModels()
+
+    private val topicAdapter: TopicAdapter by lazy { TopicAdapter() }
+    private val photoAdapter: PhotoListAdapter by lazy { PhotoListAdapter() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,22 +53,38 @@ class MainActivity: AppCompatActivity() {
         setEmptyView()
         setOnClickListeners()
 
-        viewModel.loadTopics()
-
-        viewModel.topics.observe(this) {
-            topicList ->
-                (binding.rcvMainTopic.adapter as TopicAdapter).submitList(topicList)
-                viewModel.loadPhotos((binding.rcvMainTopic.adapter as TopicAdapter).getSelectedItem().idx)
+        lifecycleScope.launch {
+            lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    viewModel.loadTopicList().collectLatest {
+                        topicAdapter.submitData(it)
+                    }
+                }
+            }
         }
 
-        viewModel.photos.observe(this) {
-            photoList ->
-                (binding.rcvMainList.adapter as PhotoListAdapter).submitList(photoList)
-                checkEmpty()
-        }
+        loadNewPhoto(TopicData.TOPIC_IDX_ALL)
 
-        viewModel.intent.observe(this) {
-            intent -> startActivity(intent)
+        viewModel.selectedTopicPosition.observe(this) {
+            selectedPosition ->
+                topicAdapter.select(selectedPosition)
+                loadNewPhoto(topicAdapter.getSelectedItem().idx)
+        }
+    }
+
+    private fun loadNewPhoto(topicIdx: String) {
+        lifecycleScope.launch {
+            lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    viewModel.loadPhotoList(topicIdx).collectLatest {
+                        val isFirst = photoAdapter.itemCount == 0
+                        photoAdapter.submitData(it)
+                        if(isFirst){
+                            checkEmpty()
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -68,12 +99,10 @@ class MainActivity: AppCompatActivity() {
     }
 
     private fun setTopicView() {
-        val adapter = TopicAdapter()
-        binding.rcvMainTopic.adapter = adapter.apply {
+        binding.rcvMainTopic.adapter = topicAdapter.apply {
             topicClickListener = object : OnTopicClickListener {
                 override fun onTopicClicked(topicData: TopicData) {
-                    binding.rcvMainTopic.scrollToPosition((binding.rcvMainTopic.adapter as TopicAdapter).selectedPosition)
-                    viewModel.loadPhotos(topicData.idx)
+                    viewModel.setSelectedTopicPosition(topicAdapter.selectedPosition)
                 }
             }
         }
@@ -99,7 +128,7 @@ class MainActivity: AppCompatActivity() {
         val layoutManager = StaggeredGridLayoutManager(2, RecyclerView.VERTICAL)
         layoutManager.gapStrategy = StaggeredGridLayoutManager.GAP_HANDLING_NONE
         binding.rcvMainList.layoutManager = layoutManager
-        binding.rcvMainList.adapter = PhotoListAdapter()
+        binding.rcvMainList.adapter = photoAdapter
         binding.rcvMainList.addItemDecoration(object: RecyclerView.ItemDecoration() {
             override fun getItemOffsets(
                 outRect: Rect,
@@ -123,7 +152,7 @@ class MainActivity: AppCompatActivity() {
     private fun setEmptyView() {
         binding.empty.tvEmptyMessage.text = "Failed to load Photos!"
         binding.empty.btnEmptyAction.setOnClickListener {
-            viewModel.loadPhotos((binding.rcvMainTopic.adapter as TopicAdapter).getSelectedItem().idx)
+            photoAdapter.refresh()
         }
     }
 
@@ -135,17 +164,17 @@ class MainActivity: AppCompatActivity() {
         binding.btnMainSearch.setOnClickListener {
             val keyword = binding.etMainSearch.text.toString()
             if(keyword.isNullOrEmpty()) {
-                Toast.makeText(MainActivity@this, "Keyword is empty :(", Toast.LENGTH_SHORT).show()
+                Toast.makeText(baseContext, "Keyword is empty :(", Toast.LENGTH_SHORT).show()
             }else{
-                val intent = Intent(MainActivity@this, SearchActivity::class.java)
+                val intent = Intent(baseContext, SearchActivity::class.java)
                 intent.putExtra("keyword", keyword)
-                viewModel.setSearchIntent(intent)
+                startActivity(intent)
             }
 
         }
 
         binding.btnMainLucky.setOnClickListener {
-            viewModel.getRandomPhoto((binding.rcvMainTopic.adapter as TopicAdapter).getSelectedItem().idx) {
+            viewModel.getRandomPhoto(topicAdapter.getSelectedItem().idx) {
                 photoIdx ->
                     if(photoIdx.isNullOrEmpty()) {
                         Toast.makeText(baseContext, "Failed to load photo :(", Toast.LENGTH_SHORT).show()

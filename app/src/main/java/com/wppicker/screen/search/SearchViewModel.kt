@@ -1,11 +1,11 @@
 package com.wppicker.screen.search
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.*
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
 import com.wppicker.data.PhotoData
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 @HiltViewModel
@@ -13,17 +13,28 @@ class SearchViewModel @Inject constructor(
     var repository: SearchRepository
 ) : ViewModel() {
 
-    private val _photos = MutableLiveData<List<PhotoData>>()
-    val photos = _photos as LiveData<List<PhotoData>>
+    var photoFlow : Flow<PagingData<PhotoData>>? = null
 
-    fun loadPhotos(keyword: String, orientation: String?) {
-        val mOrientation = if(orientation == "All") null else orientation?.lowercase()
+    val _keyword = MutableLiveData<String>()
+    val keyword = _keyword as LiveData<String>
 
-        repository.searchPhoto(keyword, mOrientation, object : OnSearchPhoto {
-            override fun onSearch(photoList: List<PhotoData>) {
-                _photos.value = photoList
-            }
-        })
+    val _orientation = MutableLiveData<String>()
+    val orientation = _orientation as LiveData<String>
+
+    fun setKeyword(keyword: String) {
+        _keyword.value = keyword
+    }
+
+    fun setOrientation(orientation: String) {
+        _orientation.value = orientation
+    }
+
+    fun searchPhotos(): Flow<PagingData<PhotoData>> {
+        val mOrientation = if(_orientation.value == "All") null else _orientation.value?.lowercase()
+        val mKeyword = _keyword.value ?: ""
+        val newResult = repository.searchPhotos(mKeyword, mOrientation).cachedIn(viewModelScope)
+        photoFlow = newResult
+        return newResult
 
     }
     class Factory @Inject constructor(private val repository: SearchRepository) : ViewModelProvider.Factory {

@@ -1,5 +1,6 @@
 package com.wppicker.common
 
+import android.util.Log
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -24,7 +25,10 @@ class RetrofitModule {
                 .newBuilder()
                 .addHeader("Authorization","Client-ID $API_KEY")
             val request = newRequestBuilder.build()
-            return chain.proceed(request)
+            val response = chain.proceed(request);
+            Log.i("TEST", "url > ${request.url()}")
+            Log.i("TEST", "response > ${response.code()}")
+            return response
         }
     }).build()
 

@@ -7,6 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.paging.PagingDataAdapter
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -21,7 +22,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-class PhotoListAdapter(): ListAdapter<PhotoData, PhotoListHolder>(diffCallback) {
+class PhotoListAdapter(): PagingDataAdapter<PhotoData, PhotoListHolder>(diffCallback) {
     companion object {
         val diffCallback = object : DiffUtil.ItemCallback<PhotoData>() {
             override fun areItemsTheSame(oldItem: PhotoData, newItem: PhotoData): Boolean {
@@ -40,14 +41,14 @@ class PhotoListAdapter(): ListAdapter<PhotoData, PhotoListHolder>(diffCallback) 
 
         val holder = PhotoListHolder(rootView)
         holder.itemView.setOnClickListener {
-            val dialog = DetailDialog.getInstance(getItem(holder.adapterPosition).photoIdx)
+            val dialog = DetailDialog.getInstance(getItem(holder.layoutPosition)!!.photoIdx)
             dialog.show((parent.context as AppCompatActivity).supportFragmentManager, "detail")
         }
         return holder
     }
 
     override fun onBindViewHolder(holder: PhotoListHolder, position: Int) {
-        holder.bind(getItem(position))
+        holder.bind(getItem(position)!!)
     }
 
 }

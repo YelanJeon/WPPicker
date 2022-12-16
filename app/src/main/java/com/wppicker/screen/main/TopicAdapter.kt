@@ -7,6 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.core.content.res.ResourcesCompat
+import androidx.paging.PagingDataAdapter
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -16,7 +17,7 @@ import com.wppicker.data.TopicData
 import com.wppicker.common.Utils
 import com.wppicker.widget.RoundedCornerImageView
 
-class TopicAdapter(): ListAdapter<TopicData, TopicHolder>(diffCallback) {
+class TopicAdapter(): PagingDataAdapter<TopicData, TopicHolder>(diffCallback) {
     var topicClickListener: OnTopicClickListener? = null
     var selectedPosition: Int = 0
 
@@ -43,18 +44,26 @@ class TopicAdapter(): ListAdapter<TopicData, TopicHolder>(diffCallback) {
                 selectedPosition = newPosition
                 notifyItemChanged(oldPosition)
                 notifyItemChanged(newPosition)
-                topicClickListener?.onTopicClicked(getItem(selectedPosition))
+
+                topicClickListener?.onTopicClicked(getItem(selectedPosition)!!)
             }
         }
         return holder
     }
 
     override fun onBindViewHolder(holder: TopicHolder, position: Int) {
-        holder.bind(getItem(position), selectedPosition == position)
+        holder.bind(getItem(position)!!, selectedPosition == position)
     }
 
     fun getSelectedItem(): TopicData {
-        return getItem(selectedPosition)
+        return getItem(selectedPosition)!!
+    }
+
+    fun select(selectedPosition: Int) {
+        val oldPosition = selectedPosition
+        this.selectedPosition = selectedPosition
+        notifyItemChanged(oldPosition)
+        notifyItemChanged(selectedPosition)
     }
 
 }

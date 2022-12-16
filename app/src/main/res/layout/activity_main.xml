@@ -41,6 +41,7 @@
                 android:layout_marginStart="16dp"
                 android:background="@null"
                 android:maxLines="1"
+                android:singleLine="true"
                 android:textColor="#000"
                 android:textSize="14dp"
                 android:hint="I'm search for..."

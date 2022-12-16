@@ -7,6 +7,9 @@ import android.view.View
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -14,11 +17,14 @@ import com.wppicker.common.Utils
 import com.wppicker.databinding.ActivitySearchBinding
 import com.wppicker.screen.main.PhotoListAdapter
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class SearchActivity: AppCompatActivity() {
 
     val viewModel: SearchViewModel by viewModels()
+    val photoAdapter by lazy { PhotoListAdapter() }
 
     val binding by lazy { ActivitySearchBinding.inflate(layoutInflater)}
 
@@ -32,22 +38,28 @@ class SearchActivity: AppCompatActivity() {
 
         val basicKeyword = intent.getStringExtra("keyword")
         basicKeyword?.let {
-            binding.etSearch.setText(it)
-            viewModel.loadPhotos(it, null)
+            viewModel.setKeyword(it)
         }
 
-        viewModel.photos.observe(this) {
-            photos ->
-                (binding.rcvSearchList.adapter as PhotoListAdapter).submitList(photos)
-                checkEmpty()
+        viewModel.keyword.observe(this) {
+            keyword ->
+                binding.etSearch.setText(keyword)
+                searchPhotos()
         }
+
+        viewModel.orientation.observe(this) {
+            orientation ->
+                binding.tvSearchOrientation.text = orientation
+                searchPhotos()
+        }
+
     }
 
     private fun setListView() {
         val layoutManager = StaggeredGridLayoutManager(2, RecyclerView.VERTICAL)
         layoutManager.gapStrategy = StaggeredGridLayoutManager.GAP_HANDLING_NONE
         binding.rcvSearchList.layoutManager = layoutManager
-        binding.rcvSearchList.adapter = PhotoListAdapter()
+        binding.rcvSearchList.adapter = photoAdapter
         binding.rcvSearchList.addItemDecoration(object: RecyclerView.ItemDecoration() {
             override fun getItemOffsets(
                 outRect: Rect,
@@ -81,10 +93,7 @@ class SearchActivity: AppCompatActivity() {
             if(keyword.isEmpty()) {
                 Toast.makeText(baseContext, "keyword is empty", Toast.LENGTH_SHORT).show()
             }else {
-                viewModel.loadPhotos(
-                    binding.etSearch.text.toString(),
-                    binding.tvSearchOrientation.text.toString()
-                )
+                viewModel.setKeyword(keyword)
             }
         }
 
@@ -95,7 +104,7 @@ class SearchActivity: AppCompatActivity() {
             builder.setItems(menus, object: DialogInterface.OnClickListener {
                 override fun onClick(dialog: DialogInterface?, which: Int) {
                     binding.tvSearchOrientation.text = menus[which]
-                    viewModel.loadPhotos(binding.etSearch.text.toString(), menus[which])
+                    viewModel.setOrientation(menus[which])
                 }
             })
             builder.create().show()
@@ -105,9 +114,21 @@ class SearchActivity: AppCompatActivity() {
         binding.ivSearchOrientationIcon.setOnClickListener(onOrientationClickListener)
     }
 
+    private fun searchPhotos() {
+        lifecycleScope.launch {
+            lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    viewModel.searchPhotos().collectLatest {
+                        photoAdapter.submitData(it)
+                    }
+                }
+            }
+        }
+    }
+
     private fun setEmptyView() {
         binding.empty.tvEmptyMessage.text = "Failed to load Photos!"
-        binding.empty.btnEmptyAction.setOnClickListener { viewModel.loadPhotos(binding.etSearch.text.toString(), binding.tvSearchOrientation.text.toString()) }
+        binding.empty.btnEmptyAction.setOnClickListener { searchPhotos() }
     }
 
     fun checkEmpty() {
