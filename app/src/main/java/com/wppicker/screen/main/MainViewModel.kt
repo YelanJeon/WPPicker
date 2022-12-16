@@ -10,6 +10,7 @@ import com.wppicker.data.TopicData
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -18,22 +19,33 @@ import javax.inject.Inject
 class MainViewModel @Inject constructor(
     var repository: MainRepository
 ): ViewModel() {
-    var topicFlow : Flow<PagingData<TopicData>>? = null
-    var photoFlow : Flow<PagingData<PhotoData>>? = null
+    var _topicFlow = MutableStateFlow<PagingData<TopicData>?>(null)
+    val topicFlow = _topicFlow.filterNotNull() as StateFlow<PagingData<TopicData>>
+    var topicJob: Job? = null
+
+    var _photoFlow = MutableStateFlow<PagingData<PhotoData>?>(null)
+    val photoFlow = _photoFlow.filterNotNull() as StateFlow<PagingData<PhotoData>>
+    var photoJob: Job? = null
 
     val _selectedTopicPosition = MutableLiveData<Int>()
     val selectedTopicPosition = _selectedTopicPosition as LiveData<Int>
 
-    fun loadTopicList(): Flow<PagingData<TopicData>> {
-        val newResult = repository.loadTopics().cachedIn(viewModelScope)
-        topicFlow = newResult
-        return newResult
+    fun loadTopicList() {
+        topicJob?.cancel()
+        topicJob = viewModelScope.launch {
+            repository.loadTopics().cachedIn(viewModelScope).collect {
+                _topicFlow.value = it
+            }
+        }
     }
 
-    fun loadPhotoList(topicIdx: String): Flow<PagingData<PhotoData>> {
-        val newResult = repository.loadPhotos(topicIdx).cachedIn(viewModelScope)
-        photoFlow = newResult
-        return newResult
+    fun loadPhotoList(topicIdx: String) {
+        photoJob?.cancel()
+        photoJob = viewModelScope.launch {
+            repository.loadPhotos(topicIdx).cachedIn(viewModelScope).collect {
+                _photoFlow.value = it
+            }
+        }
     }
 
     fun getRandomPhoto(topicIdx: String, callback: (String) -> Unit) {

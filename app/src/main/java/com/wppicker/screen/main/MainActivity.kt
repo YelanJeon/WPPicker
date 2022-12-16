@@ -53,35 +53,30 @@ class MainActivity: AppCompatActivity() {
         setEmptyView()
         setOnClickListeners()
 
+        viewModel.loadTopicList()
+        viewModel.loadPhotoList(TopicData.TOPIC_IDX_ALL)
+
         lifecycleScope.launch {
             lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                launch {
-                    viewModel.loadTopicList().collectLatest {
-                        topicAdapter.submitData(it)
-                    }
+                viewModel.topicFlow.collectLatest {
+                    topicAdapter.submitData(it)
                 }
             }
         }
 
-        loadNewPhoto(TopicData.TOPIC_IDX_ALL)
-
         viewModel.selectedTopicPosition.observe(this) {
             selectedPosition ->
                 topicAdapter.select(selectedPosition)
-                loadNewPhoto(topicAdapter.getSelectedItem().idx)
+                viewModel.loadPhotoList(topicAdapter.getSelectedItem().idx)
         }
-    }
 
-    private fun loadNewPhoto(topicIdx: String) {
         lifecycleScope.launch {
             lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                launch {
-                    viewModel.loadPhotoList(topicIdx).collectLatest {
-                        val isFirst = photoAdapter.itemCount == 0
-                        photoAdapter.submitData(it)
-                        if(isFirst){
-                            checkEmpty()
-                        }
+                viewModel.photoFlow.collectLatest {
+                    val isFirst = photoAdapter.itemCount == 0
+                    photoAdapter.submitData(it)
+                    if(isFirst){
+                        checkEmpty()
                     }
                 }
             }
