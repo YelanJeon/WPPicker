@@ -20,11 +20,11 @@ class MainViewModel @Inject constructor(
     var repository: MainRepository
 ): ViewModel() {
     var _topicFlow = MutableStateFlow<PagingData<TopicData>?>(null)
-    val topicFlow = _topicFlow.filterNotNull() as StateFlow<PagingData<TopicData>>
+    val topicFlow = _topicFlow as StateFlow<PagingData<TopicData>>
     var topicJob: Job? = null
 
     var _photoFlow = MutableStateFlow<PagingData<PhotoData>?>(null)
-    val photoFlow = _photoFlow.filterNotNull() as StateFlow<PagingData<PhotoData>>
+    val photoFlow = _photoFlow as StateFlow<PagingData<PhotoData>>
     var photoJob: Job? = null
 
     val _selectedTopicPosition = MutableLiveData<Int>()
